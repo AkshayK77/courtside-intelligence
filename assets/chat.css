@@ -1,0 +1,173 @@
+/* ── Floating chat button ─────────────────────────────────────────────────── */
+#chat-fab:hover {
+    max-width: 260px !important;
+    background: #79b8ff !important;
+    box-shadow: 0 6px 32px rgba(88, 166, 255, 0.65) !important;
+    transform: translateY(-2px);
+}
+
+#chat-fab .fab-label {
+    opacity: 0;
+    max-width: 0;
+    overflow: hidden;
+    transition: opacity 0.2s ease 0.05s, max-width 0.3s ease;
+}
+
+#chat-fab:hover .fab-label {
+    opacity: 1;
+    max-width: 200px;
+}
+
+/* ── Floating chat panel ──────────────────────────────────────────────────── */
+#chat-panel.panel-hidden {
+    opacity: 0 !important;
+    transform: scale(0.88) translateY(16px) !important;
+    pointer-events: none !important;
+}
+
+#chat-panel.panel-visible {
+    opacity: 1 !important;
+    transform: scale(1) translateY(0) !important;
+    pointer-events: all !important;
+}
+
+/* ── Chat message area ────────────────────────────────────────────────────── */
+#chat-messages {
+    scrollbar-width: thin;
+    scrollbar-color: #30363d #1c2128;
+}
+
+#chat-messages::-webkit-scrollbar {
+    width: 5px;
+}
+
+#chat-messages::-webkit-scrollbar-track {
+    background: #1c2128;
+}
+
+#chat-messages::-webkit-scrollbar-thumb {
+    background: #30363d;
+    border-radius: 4px;
+}
+
+/* ── Input area ───────────────────────────────────────────────────────────── */
+#chat-input-row {
+    display: flex;
+    gap: 8px;
+    padding: 10px 14px 14px;
+    border-top: 1px solid #30363d;
+    background: #161b22;
+}
+
+#chat-input {
+    flex: 1;
+    background: #0d1117 !important;
+    border: 1px solid #30363d !important;
+    border-radius: 6px !important;
+    color: #e6edf3 !important;
+    padding: 9px 12px !important;
+    font-size: 13px !important;
+    font-family: Inter, -apple-system, sans-serif !important;
+    outline: none !important;
+    transition: border-color 0.15s;
+}
+
+#chat-input:focus {
+    border-color: #58a6ff !important;
+}
+
+#chat-send {
+    background: #58a6ff;
+    color: #0d1117;
+    border: none;
+    border-radius: 6px;
+    padding: 9px 18px;
+    font-weight: 700;
+    font-size: 13px;
+    cursor: pointer;
+    font-family: Inter, -apple-system, sans-serif;
+    transition: background 0.15s;
+}
+
+#chat-send:hover {
+    background: #79b8ff;
+}
+
+/* ── Chart cards: show "ASK AI" tag on hover ──────────────────────────────── */
+.chart-card {
+    position: relative;
+    transition: border-color 0.2s;
+}
+
+.chart-card:hover {
+    border-color: rgba(88, 166, 255, 0.35) !important;
+}
+
+.ask-ai-tag {
+    position: absolute;
+    top: 12px;
+    right: 12px;
+    background: rgba(88, 166, 255, 0.12);
+    border: 1px solid rgba(88, 166, 255, 0.35);
+    color: #58a6ff;
+    font-size: 10px;
+    font-weight: 700;
+    padding: 4px 10px;
+    border-radius: 4px;
+    letter-spacing: 0.8px;
+    opacity: 0;
+    transition: opacity 0.2s, background 0.15s;
+    pointer-events: none;
+    /* invisible = not clickable */
+    font-family: Inter, -apple-system, sans-serif;
+    cursor: pointer;
+    z-index: 10;
+}
+
+.chart-card:hover .ask-ai-tag {
+    opacity: 1;
+    pointer-events: all;
+    /* visible = clickable */
+}
+
+.ask-ai-tag:hover {
+    background: rgba(88, 166, 255, 0.28);
+    border-color: #58a6ff;
+}
+
+/* ── Team dropdown (dark theme) ───────────────────────────────────────────── */
+.team-dropdown .Select-control {
+    background-color: #0d1117;
+    border: 1px solid #30363d;
+    color: #e6edf3;
+    border-radius: 6px;
+    min-height: 34px;
+}
+
+.team-dropdown .Select-placeholder {
+    color: #8b949e !important;
+}
+
+.team-dropdown .Select-value-label {
+    color: #e6edf3 !important;
+}
+
+.team-dropdown .Select-arrow {
+    border-color: #8b949e transparent transparent;
+}
+
+.team-dropdown .Select-menu-outer {
+    background-color: #161b22;
+    border: 1px solid #30363d;
+    color: #e6edf3;
+}
+
+.team-dropdown .VirtualizedSelectOption {
+    background-color: #161b22;
+    color: #e6edf3;
+}
+
+.team-dropdown .VirtualizedSelectFocusedOption {
+    background-color: #21262d;
+    color: #e6edf3;
+}
