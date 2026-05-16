@@ -282,6 +282,92 @@ def ask(user_message: str, history: list[dict]) -> str:
         return f"⚠️ API error: {e}"
 
 
+def explain_prediction(
+    team_name: str,
+    predicted_wins: float,
+    actual_wins: float | None,
+    feature_importance: dict,
+    team_stats: dict,
+) -> str:
+    """
+    Return a plain-english paragraph explaining the model's win prediction.
+
+    Parameters
+    ----------
+    team_name        : e.g. "OKC Thunder"
+    predicted_wins   : float from the model
+    actual_wins      : actual wins this season, or None if unavailable
+    feature_importance: {feature_name: importance_value} sorted desc
+    team_stats       : {stat_name: value} for total_vorp, total_salary_m, etc.
+    """
+    api_key = os.getenv("GROQ_API_KEY", "").strip()
+    if not api_key:
+        return ("⚠️ No GROQ_API_KEY found. Add your key to the .env file "
+                "and restart the dashboard.")
+
+    # Build a concise prompt describing the prediction context
+    delta_str = ""
+    if actual_wins is not None:
+        delta = predicted_wins - actual_wins
+        delta_str = (f"The model predicted {predicted_wins:.0f} wins vs "
+                     f"{actual_wins:.0f} actual wins (delta: {delta:+.0f}).")
+    else:
+        delta_str = f"The model predicted {predicted_wins:.0f} wins (actual wins unknown)."
+
+    # Top two features
+    top_feats = list(feature_importance.items())[:2]
+    feat_lines = "\n".join(
+        f"  - {feat}: importance={imp:.4f}, team value={team_stats.get(feat, 'N/A')}"
+        for feat, imp in top_feats
+    )
+
+    # League average context from team_efficiency.csv if available
+    league_ctx = ""
+    try:
+        te = pd.read_csv("team_efficiency.csv")
+        avg_vorp = te["current_vorp"].mean()
+        avg_pay  = te["current_payroll"].mean()
+        avg_eff  = te["cap_efficiency"].mean()
+        league_ctx = (
+            f"League averages this season: VORP={avg_vorp:.1f}, "
+            f"Payroll=${avg_pay:.0f}M, Cap-efficiency={avg_eff:.4f}."
+        )
+    except Exception:
+        pass
+
+    stats_str = ", ".join(f"{k}={v}" for k, v in team_stats.items())
+
+    prompt = f"""You are an NBA analytics expert.
+{delta_str}
+
+Team: {team_name}
+Team stats: {stats_str}
+{league_ctx}
+
+Top two features driving this prediction:
+{feat_lines}
+
+Write a single paragraph (4–6 sentences) that:
+1. States the predicted wins and how close it is to actual (if known).
+2. Identifies the top two features driving the prediction and explains their significance.
+3. Compares this team to the league average on those two features.
+4. Ends with one concrete sentence about what the team could do differently to improve their predicted win total.
+
+Be specific with numbers. Do not use bullet points."""
+
+    client = Groq(api_key=api_key)
+    try:
+        resp = client.chat.completions.create(
+            model=MODEL,
+            messages=[{"role": "user", "content": prompt}],
+            max_tokens=400,
+            temperature=0.6,
+        )
+        return resp.choices[0].message.content.strip()
+    except Exception as e:
+        return f"⚠️ API error: {e}"
+
+
 if __name__ == "__main__":
     # Quick smoke test
     print(ask("Why is OKC ranked #1?", []))
