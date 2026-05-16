@@ -1,4 +1,4 @@
-# NBA Cap Value Optimizer
+# Courtside Intelligence
 
 A full-stack NBA roster efficiency analytics system that turns raw player data and contract values into a decision-grade dashboard for front-office style resource allocation. The project spans data ingestion, feature engineering, optimization metrics, and an interactive executive dashboard with an embedded AI analyst.
 
