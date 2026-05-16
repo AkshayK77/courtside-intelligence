@@ -24,6 +24,20 @@ An end-to-end NBA roster efficiency analytics system that turns raw player stats
 - **Win Predictor** — per-team ML win forecast with feature importance chart and AI explanation
 - Embedded AI Analyst for guided interpretation
 
+## Dashboard Preview
+
+### Cap Efficiency & Efficient Frontier
+![Dashboard Overview](assets/dashboard1.png)
+
+### Team Deep Dive & Conference Analytics
+![Dashboard Analytics](assets/dashboard2.png)
+
+### Win Predictor
+![Win Predictor](assets/win_predictor.png)
+
+### Glossary
+![Glossary](assets/glossary.png)
+
 ## Data Pipeline
 1. **Raw stats ingestion** from Basketball Reference exports (Kaggle CSVs).
 2. **Salary data integration** and normalization.
