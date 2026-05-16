@@ -92,25 +92,23 @@ average roster age, average BPM, and cap efficiency. Given any team's current-se
 feature values (derived live from `master.csv`), the model outputs a predicted win total.
 
 ### Model performance
-> Fill in after running `python win_predictor.py`
 
 | Model | R² (CV) | MAE (CV) |
 |---|---|---|
-| Linear Regression | — | — |
-| Random Forest | — | — |
-| Gradient Boosting | — | — |
+| Linear Regression | 0.9817 | 1.29 |
+| Random Forest | 0.9773 | 1.40 |
+| Gradient Boosting | 0.9763 | 1.42 |
 
-**Best model**: *(fill in)*  ·  **R²**: *(fill in)*  ·  **MAE**: *(fill in)* wins
+**Best model**: Linear Regression  ·  **R²**: 0.9817  ·  **MAE**: 1.29 wins
 
 ### Top feature importances
-> Fill in after training
 
 1. `total_vorp` — total team VORP is the strongest predictor of wins
-2. `top_player_vorp` — a dominant star drives disproportionate win value
-3. `cap_efficiency` — teams that spend smartly win more than their payroll predicts
+2. `avg_bpm` — team-wide efficiency carries strong signal
+3. `top_player_vorp` — a dominant star drives disproportionate win value
 
 ### Example prediction
-> Fill in after training (e.g., "OKC: model predicts 62 wins, actual 64, delta +2")
+OKC: model predicts 64.5 wins, actual 63, delta +1.5
 
 ## Key Metrics
 - **VORP**: Value Over Replacement Player
