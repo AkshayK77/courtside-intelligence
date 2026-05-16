@@ -24,7 +24,7 @@ def dim(t):    return _c("2",  t)
 
 
 def step(n: int, title: str):
-    print(f"\n{bold(f'── Step {n}/3 — {title}')}")
+    print(f"\n{bold(f'── Step {n}/4 — {title}')}")
     print(dim("─" * 50))
 
 
@@ -93,6 +93,21 @@ def main():
                 print(yellow("  ⚠  Model training had errors — dashboard will show setup instructions"))
     else:
         print(dim("  [Step 3 skipped — using existing win_model.pkl]"))
+
+    # ── Step 4: next-season forecast ─────────────────────────────────────────
+    if not args.dashboard_only:
+        step(4, "Generate next-season win forecast")
+        import os
+        if not os.path.exists("win_model.pkl"):
+            print(yellow("  ⚠  win_model.pkl not found — skipping next-season forecast"))
+        else:
+            ok = run_step("forecast_next_season")
+            if ok:
+                print(green("  ✓ next_season_forecast.csv written"))
+            else:
+                print(yellow("  ⚠  Forecast had errors — Next Season tab will show setup instructions"))
+    else:
+        print(dim("  [Step 4 skipped]"))
 
     # ── Launch dashboard ──────────────────────────────────────────────────────
     elapsed = time.time() - start

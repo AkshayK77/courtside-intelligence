@@ -26,6 +26,12 @@ try:
 except Exception:
     pass  # model not yet trained — Win Predictor tab shows instructions
 
+_NEXT_FORECAST = None
+try:
+    _NEXT_FORECAST = pd.read_csv('next_season_forecast.csv')
+except Exception:
+    pass
+
 # ── Load data ─────────────────────────────────────────────────────────────────
 te = pd.read_csv("team_efficiency.csv")   # 30 teams
 vm = pd.read_csv("value_metrics.csv")     # individual players
@@ -1102,6 +1108,201 @@ def make_win_predictor_tab() -> html.Div:
 
 
 # ─────────────────────────────────────────────────────────────────────────────
+# Next Season Forecast tab
+# ─────────────────────────────────────────────────────────────────────────────
+
+def make_next_season_forecast_chart(df: pd.DataFrame) -> go.Figure:
+    """Horizontal bar chart: projected wins next season, coloured by win delta."""
+    df = df.sort_values("predicted_wins", ascending=True).copy()
+
+    def delta_color(d):
+        if pd.isna(d):
+            return TEXT_DIM
+        if d >= 3:
+            return GREEN
+        if d <= -3:
+            return RED
+        return YELLOW
+
+    colors = df["win_delta"].apply(delta_color)
+    labels = df.apply(
+        lambda r: (
+            f"{r['predicted_wins']:.0f} ({r['win_delta']:+.1f})"
+            if not pd.isna(r.get("win_delta")) else f"{r['predicted_wins']:.0f}"
+        ),
+        axis=1,
+    )
+
+    fig = go.Figure()
+    fig.add_trace(go.Bar(
+        x=df["predicted_wins"],
+        y=df["team"],
+        orientation="h",
+        marker_color=colors,
+        text=labels,
+        textposition="outside",
+        textfont=dict(size=10, color=TEXT),
+        hovertemplate=(
+            "<b>%{y}</b><br>"
+            "Projected wins: %{x:.1f}<br>"
+            "<extra></extra>"
+        ),
+    ))
+
+    fig.add_vline(x=41, line_dash="dot", line_color=BORDER, line_width=1)
+    fig.add_annotation(x=41, y=1.01, xref="x", yref="paper",
+        text=".500", font=dict(color=TEXT_DIM, size=10), showarrow=False)
+
+    fig.add_annotation(x=0.97, y=0.10, xref="paper", yref="paper",
+        text="■ Rising ≥+3", font=dict(color=GREEN, size=10),
+        showarrow=False, xanchor="right")
+    fig.add_annotation(x=0.97, y=0.05, xref="paper", yref="paper",
+        text="■ Stable (±3)", font=dict(color=YELLOW, size=10),
+        showarrow=False, xanchor="right")
+    fig.add_annotation(x=0.97, y=0.00, xref="paper", yref="paper",
+        text="■ Declining ≤−3", font=dict(color=RED, size=10),
+        showarrow=False, xanchor="right")
+
+    fig.update_layout(
+        **CHART_LAYOUT,
+        title="2026-27 Projected Win Totals",
+        height=820,
+        xaxis=dict(title="Projected Wins", range=[0, 82], gridcolor=BORDER),
+        yaxis=dict(title="", tickfont=dict(size=11)),
+        margin=dict(l=10, r=80, t=40, b=10),
+    )
+    return fig
+
+
+def make_next_season_tab() -> html.Div:
+    if _NEXT_FORECAST is None:
+        return html.Div([
+            html.P("⚙️  Next-season forecast not yet generated.", style={
+                'color': YELLOW, 'fontWeight': '600', 'fontSize': '14px'}),
+            html.P("Run the following to enable this tab:", style={'color': TEXT_DIM}),
+            html.Pre(
+                "python forecast_next_season.py",
+                style={
+                    'backgroundColor': BG_CHART, 'border': f'1px solid {BORDER}',
+                    'borderRadius': '6px', 'padding': '12px', 'color': TEXT,
+                    'fontSize': '12px', 'fontFamily': 'monospace', 'margin': '8px 0',
+                }),
+        ], style={'padding': '20px'})
+
+    df = _NEXT_FORECAST.copy()
+
+    # ── Summary KPI row ──────────────────────────────────────────────────────
+    risers  = (df["win_delta"] >= 3).sum()
+    fallers = (df["win_delta"] <= -3).sum()
+    avg_delta = df["win_delta"].mean()
+
+    def kpi(label, value, color=TEXT):
+        return html.Div([
+            html.P(label, style={'margin': '0', 'fontSize': '11px', 'color': TEXT_DIM,
+                                 'textTransform': 'uppercase', 'letterSpacing': '0.7px'}),
+            html.P(value, style={'margin': '4px 0 0', 'fontSize': '22px',
+                                 'fontWeight': '700', 'color': color}),
+        ], style={
+            'backgroundColor': BG_CARD, 'border': f'1px solid {BORDER}',
+            'borderRadius': '10px', 'padding': '14px 18px', 'flex': '1',
+        })
+
+    delta_color = GREEN if avg_delta >= 0 else RED
+    kpi_row = html.Div([
+        kpi("Teams Rising (≥+3 wins)", str(risers), GREEN),
+        kpi("Teams Falling (≤−3 wins)", str(fallers), RED),
+        kpi("League Avg Δ Wins", f"{avg_delta:+.1f}", delta_color),
+        kpi("Projection Season", "2026-27", BLUE),
+    ], style={'display': 'flex', 'gap': '10px', 'marginBottom': '12px'})
+
+    # ── Main chart ───────────────────────────────────────────────────────────
+    chart = html.Div([
+        dcc.Graph(
+            figure=make_next_season_forecast_chart(df),
+            config={'displayModeBar': False},
+        ),
+    ], style={
+        'backgroundColor': BG_CARD, 'border': f'1px solid {BORDER}',
+        'borderRadius': '10px', 'padding': '12px', 'marginBottom': '12px',
+    })
+
+    # ── Comparison table ─────────────────────────────────────────────────────
+    table_rows = []
+    sorted_df = df.sort_values("predicted_wins", ascending=False).reset_index(drop=True)
+    for i, row in sorted_df.iterrows():
+        delta = row.get("win_delta", float("nan"))
+        delta_str = f"{delta:+.1f}" if not pd.isna(delta) else "—"
+        cur_str   = f"{row['current_wins']:.0f}" if not pd.isna(row.get("current_wins")) else "—"
+
+        if not pd.isna(delta):
+            d_color = GREEN if delta >= 3 else (RED if delta <= -3 else YELLOW)
+        else:
+            d_color = TEXT_DIM
+
+        full_name = TEAM_NAMES.get(row["team"], row["team"])
+        table_rows.append(html.Tr([
+            html.Td(str(i + 1), style={'color': TEXT_DIM, 'width': '36px'}),
+            html.Td(f"{full_name} ({row['team']})", style={'color': TEXT, 'fontWeight': '600'}),
+            html.Td(cur_str,   style={'color': TEXT_DIM, 'textAlign': 'right'}),
+            html.Td(f"{row['predicted_wins']:.1f}", style={'color': BLUE, 'textAlign': 'right', 'fontWeight': '700'}),
+            html.Td(delta_str, style={'color': d_color,  'textAlign': 'right', 'fontWeight': '700'}),
+            html.Td(f"{row['total_vorp']:.1f}",    style={'color': TEXT_DIM, 'textAlign': 'right'}),
+            html.Td(f"{row['avg_age']:.1f}",       style={'color': TEXT_DIM, 'textAlign': 'right'}),
+            html.Td(f"{row['avg_bpm']:.2f}",       style={'color': TEXT_DIM, 'textAlign': 'right'}),
+        ], style={'borderBottom': f'1px solid {BORDER}'}))
+
+    th_style = {'color': TEXT_DIM, 'fontSize': '11px', 'textTransform': 'uppercase',
+                'letterSpacing': '0.6px', 'padding': '8px 12px', 'textAlign': 'right'}
+    th_left  = {**th_style, 'textAlign': 'left'}
+
+    table = html.Div([
+        html.P("Team Projections", style={
+            'margin': '0 0 10px', 'fontSize': '11px', 'color': TEXT_DIM,
+            'textTransform': 'uppercase', 'letterSpacing': '0.8px',
+        }),
+        html.Table([
+            html.Thead(html.Tr([
+                html.Th("#",            style={**th_left,  'width': '36px'}),
+                html.Th("Team",         style=th_left),
+                html.Th("2025-26 W",    style=th_style),
+                html.Th("2026-27 Proj", style=th_style),
+                html.Th("Δ Wins",       style=th_style),
+                html.Th("Total VORP",   style=th_style),
+                html.Th("Avg Age",      style=th_style),
+                html.Th("Avg BPM",      style=th_style),
+            ], style={'borderBottom': f'2px solid {BORDER}'})),
+            html.Tbody(table_rows),
+        ], style={
+            'width': '100%', 'borderCollapse': 'collapse',
+            'fontSize': '13px', 'fontFamily': FONT_FAMILY,
+        }),
+    ], style={
+        'backgroundColor': BG_CARD, 'border': f'1px solid {BORDER}',
+        'borderRadius': '10px', 'padding': '16px',
+    })
+
+    # ── Methodology note ──────────────────────────────────────────────────────
+    method_note = html.Div([
+        html.P("Projection Methodology", style={
+            'margin': '0 0 8px', 'fontSize': '11px', 'color': TEXT_DIM,
+            'textTransform': 'uppercase', 'letterSpacing': '0.8px',
+        }),
+        html.P(
+            "Projections assume current rosters hold. Each player's VORP and BPM are "
+            "adjusted by an age-based curve (young players: +5–15%, prime: stable, veterans: −10–35%). "
+            "Team features are re-aggregated and fed into the trained Linear Regression win model "
+            f"(R²=0.98, MAE≈1.3 wins). No free-agency or trade assumptions are made.",
+            style={'color': TEXT_DIM, 'fontSize': '12px', 'lineHeight': '1.7', 'margin': '0'},
+        ),
+    ], style={
+        'backgroundColor': BG_CARD, 'border': f'1px solid {BORDER}',
+        'borderRadius': '10px', 'padding': '14px 16px', 'marginTop': '12px',
+    })
+
+    return html.Div([kpi_row, chart, table, method_note], style={'padding': '4px'})
+
+
+# ─────────────────────────────────────────────────────────────────────────────
 # App layout
 # ─────────────────────────────────────────────────────────────────────────────
 app = Dash(__name__, title="NBA Roster Optimizer")
@@ -1237,6 +1438,13 @@ app.layout = html.Div([
                 style=TAB_STYLE,
                 selected_style=TAB_SELECTED_STYLE,
                 children=[html.Div(make_win_predictor_tab(), style={"paddingTop": "14px"})],
+            ),
+            dcc.Tab(
+                label="🔮  Next Season",
+                value="next-season",
+                style=TAB_STYLE,
+                selected_style=TAB_SELECTED_STYLE,
+                children=[html.Div(make_next_season_tab(), style={"paddingTop": "14px"})],
             ),
             dcc.Tab(
                 label="📖  Glossary",

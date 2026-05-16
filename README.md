@@ -11,6 +11,7 @@ An end-to-end NBA roster efficiency analytics system that turns raw player stats
 - **East vs. West comparative analytics** indexed against league averages.
 - **Win prediction model** with $R^2$ accuracy scored against historical team data.
 - **Feature importance visualization** showing which roster factors drive win totals.
+- **Next-season win forecast** using age-curve projections and the trained model.
 - **AI-powered prediction explanation** that contextualizes each team's forecast in plain English.
 - **Interactive Dash application** designed for portfolio-grade storytelling.
 
@@ -22,6 +23,7 @@ An end-to-end NBA roster efficiency analytics system that turns raw player stats
 - East vs. West Conference Comparison
 - Playoff Step-Up vs. Contract Value
 - **Win Predictor** — per-team ML win forecast with feature importance chart and AI explanation
+- **Next Season Forecast** — projected wins for next year based on age curves
 - Embedded AI Analyst for guided interpretation
 
 ## Dashboard Preview
@@ -46,6 +48,7 @@ An end-to-end NBA roster efficiency analytics system that turns raw player stats
 5. **Team-level aggregation** for efficiency and gap analysis.
 6. **Playoff step-up simulation** for postseason visualization.
 7. **Win model training** (optional) using historical team data.
+8. **Next-season forecast** using age-curve projections (optional).
 
 ## Repository Structure
 - `run_pipeline.py` — one-command pipeline runner (fetch, train, launch dashboard)
@@ -56,6 +59,7 @@ An end-to-end NBA roster efficiency analytics system that turns raw player stats
 - `fetch_historical.py` — builds `historical_teams.csv` from local stats dataset
 - `build_training_data.py` — merges historical + current season into `training_data.csv`
 - `win_predictor.py` — trains and evaluates win prediction models; saves `win_model.pkl`
+- `forecast_next_season.py` — projects next-season team features and writes `next_season_forecast.csv`
 - `dashboard.py` — Dash app and visual analytics (Cap Analytics + Win Predictor tabs)
 - `agent.py` — AI analyst helper (chat + win prediction explanation)
 - `*.csv` — curated data outputs used by the dashboard
@@ -87,6 +91,7 @@ python build_master.py
 python value_metric.py
 python optimizer.py
 python build_playoffs.py
+python forecast_next_season.py
 
 # 5) Run the dashboard (if not using run_pipeline)
 python dashboard.py
@@ -135,6 +140,21 @@ OKC: model predicts 64.5 wins, actual 63, delta +1.5
 - `salaries.csv` — 2025-26 contract values with player IDs
 - `stats_since_1950/Seasons_Stats.csv` — historical team data used for win model
 
+## Next-Season Forecast
+
+### What it does
+Projects each player's VORP and BPM one year forward using an age curve, aggregates
+to team-level features, and uses the trained win model to estimate next-season wins.
+This is a forward-looking projection with no actual wins available yet.
+
+### How to run
+```bash
+python forecast_next_season.py
+```
+
+### Output
+`next_season_forecast.csv` — per-team projected wins for the next season.
+
 ## Outputs
 - `master.csv` — merged player stats + salary
 - `value_metrics.csv` — per-player value tiers and overpay
@@ -142,6 +162,7 @@ OKC: model predicts 64.5 wins, actual 63, delta +1.5
 - `playoffs.csv` — playoff vs regular-season efficiency deltas
 - `training_data.csv` — historical + current season features for ML
 - `win_model.pkl`, `feature_importance.csv`, `model_meta.json`
+- `next_season_forecast.csv` — next-season win projections
 
 ## Notes
 - Data is aligned to the 2025-26 NBA season.
